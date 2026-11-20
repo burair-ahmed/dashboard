@@ -1,7 +1,7 @@
 body {
   margin: 0;
   padding: 0;
-  width: 280px;
+  width: 290px;
   background: #131722;
   color: #D1D4DC;
   font-family: -apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, sans-serif;
@@ -106,6 +106,23 @@ body {
   margin-bottom: 4px;
 }
 
+.full-btn {
+  width: 100%;
+  background: #00E676;
+  border: none;
+  border-radius: 4px;
+  color: #131722;
+  padding: 8px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+  transition: background 0.15s;
+}
+
+.full-btn:hover {
+  background: #00C853;
+}
+
 .copy-row {
   display: flex;
   gap: 6px;
@@ -150,4 +167,3 @@ body {
 .actions button:hover {
   background: #363C4E;
 }
-

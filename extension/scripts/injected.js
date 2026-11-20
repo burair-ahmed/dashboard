@@ -1,13 +1,15 @@
 /**
  * Injected Page Script:
  * Runs directly inside TradingView's execution environment (window context).
- * Implements Layer 1 (Native Shapes via internal API) and Layer 2 (Canvas Overlay Fallback).
+ * Combines:
+ * 1. Silent automated sync into GEX Levels Pro (GEX_Levels_Pro_v15.pine)
+ * 2. Layer 1 Native Line Drawings (when indicator is not present)
+ * 3. Layer 2 Canvas Overlay Fallback
  */
 
 (function initGEXInjectedEngine() {
   console.log("[GEX Injected] Engine initialized in TradingView page context.");
 
-  // Drawing state
   const drawnShapeIds = {
     call_wall: null,
     put_wall: null,
@@ -19,7 +21,6 @@
   let overlayCtx = null;
   let currentLevels = null;
 
-  // 1. Get TradingView Chart Object
   function getActiveChart() {
     if (typeof window.TradingViewApi !== "undefined" && typeof window.TradingViewApi.activeChart === "function") {
       return window.TradingViewApi.activeChart();
@@ -30,18 +31,97 @@
     return null;
   }
 
+  // ══════════════════════════════════════════════════════════
+  // 1. AUTOMATED GEX LEVELS PRO SYNC (Zero-Interruption)
+  // ══════════════════════════════════════════════════════════
+  function syncGexProIndicator(chart, gexProText) {
+    if (!chart || !gexProText) return false;
+
+    let synced = false;
+
+    // Strategy A: chart.getAllStudies() + getStudyById().applyOverrides()
+    try {
+      if (typeof chart.getAllStudies === "function") {
+        const studies = chart.getAllStudies();
+        const gexStudy = studies.find(s => {
+          const n = (s.name || "").toLowerCase();
+          const d = (s.description || "").toLowerCase();
+          return n.includes("gex pro") || n.includes("gex levels") || d.includes("gex pro") || d.includes("gex levels");
+        });
+
+        if (gexStudy && typeof chart.getStudyById === "function") {
+          const studyApi = chart.getStudyById(gexStudy.id);
+          if (studyApi && typeof studyApi.applyOverrides === "function") {
+            studyApi.applyOverrides({
+              "levelsTxt": gexProText,
+              "levels": gexProText,
+              "Levels (price | type | GEX M | description)": gexProText
+            });
+            synced = true;
+            console.log("[GEX Injected] GEX Levels Pro synced via studyApi.applyOverrides");
+          }
+        }
+      }
+    } catch (errA) {
+      console.warn("[GEX Injected] Study API override attempt:", errA);
+    }
+
+    // Strategy B: Direct reactive model property mutation
+    if (!synced) {
+      try {
+        const model = chart._model || (window._chartWidget && window._chartWidget._model);
+        if (model && model._panes) {
+          for (const pane of model._panes) {
+            if (!pane._sources) continue;
+            for (const src of pane._sources) {
+              const meta = src._metaInfo || {};
+              const desc = (meta.description || meta.shortDescription || "").toLowerCase();
+              if (desc.includes("gex pro") || desc.includes("gex levels")) {
+                if (src._properties && src._properties.inputs) {
+                  const inputs = src._properties.inputs;
+                  for (const key of Object.keys(inputs)) {
+                    const prop = inputs[key];
+                    if (prop && typeof prop.setValue === "function") {
+                      const currVal = typeof prop.value === "function" ? prop.value() : "";
+                      if (typeof currVal === "string" && (currVal.includes("|") || key.toLowerCase().includes("level"))) {
+                        prop.setValue(gexProText);
+                        synced = true;
+                        console.log("[GEX Injected] GEX Levels Pro synced via reactive model property:", key);
+                        break;
+                      }
+                    }
+                  }
+                }
+              }
+              if (synced) break;
+            }
+            if (synced) break;
+          }
+        }
+      } catch (errB) {
+        console.warn("[GEX Injected] Model property mutation attempt:", errB);
+      }
+    }
+
+    // Notify content script about GEX Pro sync status
+    window.postMessage({
+      type: "GEX_PRO_SYNC_STATUS",
+      synced: synced
+    }, "*");
+
+    return synced;
+  }
+
+  // ══════════════════════════════════════════════════════════
   // 2. LAYER 1: Native TradingView Shapes
+  // ══════════════════════════════════════════════════════════
   function renderNativeLines(chart, levels) {
     try {
       const shapeFn = chart.createShape || chart.createMultipointShape;
-      if (typeof shapeFn !== "function") {
-        return false;
-      }
+      if (typeof shapeFn !== "function") return false;
 
-      // Cleanup prior shapes
       clearNativeShapes(chart);
 
-      // Helper to draw a single line
       const drawLine = (price, label, color) => {
         try {
           return shapeFn.call(chart, { price: price }, {
@@ -57,7 +137,6 @@
             }
           });
         } catch (err) {
-          console.warn(`[GEX Injected] Error drawing ${label}:`, err);
           return null;
         }
       };
@@ -72,28 +151,25 @@
         drawnShapeIds.gamma_flip = drawLine(levels.gamma_flip, `Gamma Flip: ${levels.gamma_flip}`, "#FFD600");
       }
 
-      console.log("[GEX Injected] Rendered native lines successfully:", drawnShapeIds);
       return true;
     } catch (e) {
-      console.warn("[GEX Injected] Native line rendering encountered error, falling back to overlay:", e);
       return false;
     }
   }
 
   function clearNativeShapes(chart) {
     if (!chart || typeof chart.removeEntity !== "function") return;
-    
     ["call_wall", "put_wall", "gamma_flip"].forEach(key => {
       if (drawnShapeIds[key]) {
-        try {
-          chart.removeEntity(drawnShapeIds[key]);
-        } catch (e) {}
+        try { chart.removeEntity(drawnShapeIds[key]); } catch (e) {}
         drawnShapeIds[key] = null;
       }
     });
   }
 
+  // ══════════════════════════════════════════════════════════
   // 3. LAYER 2: Canvas Overlay Fallback
+  // ══════════════════════════════════════════════════════════
   function ensureOverlayCanvas() {
     if (!overlayCanvas) {
       const container = document.querySelector('.chart-gui-wrapper, [class*="chartContainer-"]');
@@ -131,7 +207,6 @@
     overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
     const dpr = window.devicePixelRatio || 1;
 
-    // Helper to calculate pixel coordinate from price
     const getCoordinateForPrice = (price) => {
       if (chart && typeof chart.priceToCoordinate === "function") {
         return chart.priceToCoordinate(price) * dpr;
@@ -152,7 +227,6 @@
       overlayCtx.lineTo(overlayCanvas.width - (80 * dpr), y);
       overlayCtx.stroke();
 
-      // Label Pill
       overlayCtx.fillStyle = color;
       overlayCtx.font = `bold ${11 * dpr}px sans-serif`;
       overlayCtx.fillText(`${label}: ${price}`, overlayCanvas.width - (220 * dpr), y - (5 * dpr));
@@ -164,27 +238,37 @@
     if (levels.gamma_flip) drawOverlayLine(levels.gamma_flip, "Gamma Flip", "#FFD600");
   }
 
-  // 4. Message Receiver from content script
+  // ══════════════════════════════════════════════════════════
+  // 4. Message Receiver
+  // ══════════════════════════════════════════════════════════
   window.addEventListener("message", (event) => {
-    if (event.source !== window || !event.data || event.data.type !== "RENDER_GEX_LEVELS") {
-      return;
-    }
+    if (event.source !== window || !event.data) return;
 
-    currentLevels = event.data.levels;
-    const chart = getActiveChart();
+    if (event.data.type === "RENDER_GEX_LEVELS") {
+      currentLevels = event.data.levels;
+      const chart = getActiveChart();
 
-    if (chart) {
-      // Try Layer 1 (Native Shapes)
-      const nativeOk = renderNativeLines(chart, currentLevels);
-      if (!nativeOk) {
-        // Fallback to Layer 2 (Canvas Overlay)
-        renderCanvasOverlay(chart, currentLevels);
+      if (chart) {
+        // 1. Try syncing GEX Levels Pro indicator silently
+        const gexProSynced = syncGexProIndicator(chart, currentLevels.gex_pro_text);
+
+        // 2. If GEX Levels Pro is NOT on chart, render native shapes or canvas
+        if (!gexProSynced) {
+          const nativeOk = renderNativeLines(chart, currentLevels);
+          if (!nativeOk) {
+            renderCanvasOverlay(chart, currentLevels);
+          }
+        } else {
+          // If GEX Pro is active, clear native shapes to avoid double drawing
+          clearNativeShapes(chart);
+          if (overlayCtx && overlayCanvas) {
+            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+          }
+        }
+      } else {
+        renderCanvasOverlay(null, currentLevels);
       }
-    } else {
-      console.warn("[GEX Injected] No active chart found via window.TradingViewApi. Attempting canvas overlay fallback.");
-      renderCanvasOverlay(null, currentLevels);
     }
   });
 
 })();
-

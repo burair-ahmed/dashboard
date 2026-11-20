@@ -6,7 +6,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const pwVal = document.getElementById("pw-val");
   const pineString = document.getElementById("pine-string");
   const copyBtn = document.getElementById("copy-btn");
+  const copyProBtn = document.getElementById("copy-pro-btn");
   const reconnectBtn = document.getElementById("reconnect-btn");
+
+  let currentGexProText = "";
 
   function updateUI() {
     chrome.runtime.sendMessage({ action: "GET_STATUS" }, (response) => {
@@ -28,6 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
         gfVal.textContent = l.gamma_flip;
         pwVal.textContent = l.put_wall;
         pineString.value = l.compact_string || "";
+        currentGexProText = l.gex_pro_text || "";
       }
     });
   }
@@ -37,6 +41,15 @@ document.addEventListener("DOMContentLoaded", () => {
       navigator.clipboard.writeText(pineString.value).then(() => {
         copyBtn.textContent = "Copied!";
         setTimeout(() => { copyBtn.textContent = "Copy"; }, 1500);
+      });
+    }
+  });
+
+  copyProBtn.addEventListener("click", () => {
+    if (currentGexProText) {
+      navigator.clipboard.writeText(currentGexProText).then(() => {
+        copyProBtn.textContent = "Plan Copied to Clipboard! ✅";
+        setTimeout(() => { copyProBtn.textContent = "Copy Full GEX Pro Plan 📋"; }, 1800);
       });
     }
   });
@@ -54,4 +67,3 @@ document.addEventListener("DOMContentLoaded", () => {
   updateUI();
   setInterval(updateUI, 2000);
 });
-

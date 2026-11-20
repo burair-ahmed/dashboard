@@ -1,9 +1,8 @@
 /**
  * Content Script:
- * Bridges the TradingView page DOM with extension background worker and injected script.
+ * Bridges TradingView DOM with extension background worker and injected page script.
  */
 
-// 1. Inject injected.js into the page context (MAIN world) to access window.TradingViewApi
 function injectPageScript() {
   const script = document.createElement("script");
   script.src = chrome.runtime.getURL("scripts/injected.js");
@@ -14,8 +13,10 @@ function injectPageScript() {
 
 injectPageScript();
 
-// 2. Create Floating UI Status Badge
 let badgeElement = null;
+let latestGexProText = "";
+let latestCompactString = "";
+let isGexProSynced = false;
 
 function createStatusBadge() {
   if (document.getElementById("gex-status-badge")) return;
@@ -27,7 +28,8 @@ function createStatusBadge() {
     <div class="gex-badge-header">
       <span class="gex-status-dot"></span>
       <span class="gex-title">GEX Automation</span>
-      <span class="gex-copy-btn" title="Copy Pine Script Input String">📋</span>
+      <span class="gex-sync-pill" id="gex-pro-status">Syncing...</span>
+      <span class="gex-copy-btn" id="gex-copy-pro" title="Copy GEX Pro Plan to Clipboard">📋</span>
     </div>
     <div class="gex-badge-body">
       <div class="gex-stat"><span class="gex-lbl">CW:</span> <span id="gex-cw">--</span></div>
@@ -40,11 +42,12 @@ function createStatusBadge() {
   `;
   document.body.appendChild(badgeElement);
 
-  // Copy button handler
-  badgeElement.querySelector(".gex-copy-btn").addEventListener("click", () => {
-    if (window.__GEX_LATEST_COMPACT__) {
-      navigator.clipboard.writeText(window.__GEX_LATEST_COMPACT__).then(() => {
-        const btn = badgeElement.querySelector(".gex-copy-btn");
+  // Copy GEX Pro Plan handler
+  badgeElement.querySelector("#gex-copy-pro").addEventListener("click", () => {
+    const textToCopy = latestGexProText || latestCompactString;
+    if (textToCopy) {
+      navigator.clipboard.writeText(textToCopy).then(() => {
+        const btn = badgeElement.querySelector("#gex-copy-pro");
         btn.textContent = "✅";
         setTimeout(() => { btn.textContent = "📋"; }, 1500);
       });
@@ -54,11 +57,10 @@ function createStatusBadge() {
 
 createStatusBadge();
 
-// 3. Monitor Active Symbol Changes in TradingView UI
+// Detect active symbol changes in TradingView
 let lastDetectedSymbol = "";
 
 function detectSymbol() {
-  // Common TradingView header selectors
   const symbolSelectors = [
     '[id*="header-toolbar-symbol-search"] button div',
     '[class*="symbolEdit-"]',
@@ -79,20 +81,37 @@ function detectSymbol() {
   }
 }
 
-// Observe DOM changes to track symbol switches
-const observer = new MutationObserver(() => {
-  detectSymbol();
-});
+const observer = new MutationObserver(() => { detectSymbol(); });
 observer.observe(document.body, { childList: true, subtree: true });
 setInterval(detectSymbol, 2000);
 
-// 4. Relay Levels from Extension to Injected Script
+// Listen for messages from injected page world
+window.addEventListener("message", (event) => {
+  if (event.source !== window || !event.data) return;
+
+  if (event.data.type === "GEX_PRO_SYNC_STATUS") {
+    isGexProSynced = event.data.synced;
+    const pill = document.getElementById("gex-pro-status");
+    if (pill) {
+      if (isGexProSynced) {
+        pill.textContent = "GEX Pro Synced";
+        pill.className = "gex-sync-pill synced";
+      } else {
+        pill.textContent = "Native Lines";
+        pill.className = "gex-sync-pill native";
+      }
+    }
+  }
+});
+
+// Relay Levels from background to injected script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "NEW_GEX_LEVELS") {
     const levels = request.payload;
-    window.__GEX_LATEST_COMPACT__ = levels.compact_string;
+    latestCompactString = levels.compact_string;
+    latestGexProText = levels.gex_pro_text;
 
-    // Update Badge
+    // Update Badge UI
     if (badgeElement) {
       const dot = badgeElement.querySelector(".gex-status-dot");
       dot.className = "gex-status-dot connected";
@@ -103,7 +122,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       document.getElementById("gex-age").textContent = new Date().toLocaleTimeString();
     }
 
-    // Post message to page window for injected.js to execute TradingView chart drawings
+    // Send to injected.js
     window.postMessage({
       type: "RENDER_GEX_LEVELS",
       levels: levels
@@ -112,4 +131,3 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ received: true });
   }
 });
-
