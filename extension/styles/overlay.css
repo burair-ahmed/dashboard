@@ -1,0 +1,83 @@
+/* Floating status badge */
+.gex-floating-badge {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999999;
+  background: rgba(19, 23, 34, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #D1D4DC;
+  font-family: -apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, Ubuntu, sans-serif;
+  font-size: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(8px);
+  min-width: 170px;
+  user-select: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.gex-badge-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gex-title {
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-left: 6px;
+  flex: 1;
+}
+
+.gex-copy-btn {
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background 0.15s;
+}
+
+.gex-copy-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.gex-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #FF9100;
+  display: inline-block;
+}
+
+.gex-status-dot.connected {
+  background: #00E676;
+  box-shadow: 0 0 6px rgba(0, 230, 118, 0.6);
+}
+
+.gex-badge-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.gex-stat {
+  display: flex;
+  justify-content: space-between;
+}
+
+.gex-lbl {
+  color: #787B86;
+  font-weight: 500;
+}
+
+.gex-badge-footer {
+  margin-top: 6px;
+  font-size: 10px;
+  color: #787B86;
+  text-align: right;
+}
+

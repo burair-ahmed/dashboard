@@ -1,0 +1,153 @@
+body {
+  margin: 0;
+  padding: 0;
+  width: 280px;
+  background: #131722;
+  color: #D1D4DC;
+  font-family: -apple-system, BlinkMacSystemFont, 'Trebuchet MS', Roboto, sans-serif;
+  font-size: 13px;
+}
+
+.popup-container {
+  padding: 14px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-weight: 700;
+  font-size: 14px;
+  color: #FFFFFF;
+}
+
+.status-badge {
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-badge.connected {
+  background: rgba(0, 230, 118, 0.2);
+  color: #00E676;
+}
+
+.status-badge.connecting {
+  background: rgba(255, 145, 0, 0.2);
+  color: #FF9100;
+}
+
+.status-badge.disconnected {
+  background: rgba(255, 23, 68, 0.2);
+  color: #FF1744;
+}
+
+.symbol-box {
+  background: #1E222D;
+  border-radius: 6px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.symbol-box .lbl {
+  color: #787B86;
+}
+
+.symbol-box .val {
+  font-weight: 700;
+  color: #2962FF;
+}
+
+.levels-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.card {
+  background: #1E222D;
+  border-radius: 6px;
+  padding: 8px;
+  text-align: center;
+}
+
+.card-title {
+  font-size: 10px;
+  color: #787B86;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.card-val {
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.card.call-wall .card-val { color: #FF007F; }
+.card.gamma-flip .card-val { color: #FFD600; }
+.card.put-wall .card-val { color: #00E676; }
+
+.copy-section {
+  margin-bottom: 12px;
+}
+
+.copy-section label {
+  font-size: 11px;
+  color: #787B86;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.copy-row {
+  display: flex;
+  gap: 6px;
+}
+
+.copy-row input {
+  flex: 1;
+  background: #1E222D;
+  border: 1px solid #2A2E39;
+  border-radius: 4px;
+  color: #FFFFFF;
+  padding: 6px;
+  font-size: 11px;
+}
+
+.copy-row button {
+  background: #2962FF;
+  border: none;
+  border-radius: 4px;
+  color: #FFFFFF;
+  padding: 6px 12px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.copy-row button:hover {
+  background: #1E53E5;
+}
+
+.actions button {
+  width: 100%;
+  background: #2A2E39;
+  border: none;
+  border-radius: 4px;
+  color: #D1D4DC;
+  padding: 8px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.actions button:hover {
+  background: #363C4E;
+}
+

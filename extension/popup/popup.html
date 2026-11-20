@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>GEX TradingView Controller</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <div class="header">
+      <div class="title">GEX Automation</div>
+      <div id="conn-status" class="status-badge connecting">Connecting</div>
+    </div>
+
+    <div class="symbol-box">
+      <span class="lbl">Active Instrument</span>
+      <span id="active-symbol" class="val">--</span>
+    </div>
+
+    <div class="levels-grid">
+      <div class="card call-wall">
+        <div class="card-title">Call Wall</div>
+        <div id="cw-val" class="card-val">--</div>
+      </div>
+      <div class="card gamma-flip">
+        <div class="card-title">Gamma Flip</div>
+        <div id="gf-val" class="card-val">--</div>
+      </div>
+      <div class="card put-wall">
+        <div class="card-title">Put Wall</div>
+        <div id="pw-val" class="card-val">--</div>
+      </div>
+    </div>
+
+    <div class="copy-section">
+      <label for="pine-string">Pine Script String (Layer 3):</label>
+      <div class="copy-row">
+        <input type="text" id="pine-string" readonly placeholder="Waiting for data...">
+        <button id="copy-btn">Copy</button>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="reconnect-btn">Reconnect Backend</button>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
+
