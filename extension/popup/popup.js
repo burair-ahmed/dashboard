@@ -1,5 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const connStatus = document.getElementById("conn-status");
+  const backendUrlInput = document.getElementById("backend-url");
+  const saveUrlBtn = document.getElementById("save-url-btn");
   const activeSymbol = document.getElementById("active-symbol");
   const cwVal = document.getElementById("cw-val");
   const gfVal = document.getElementById("gf-val");
@@ -10,6 +12,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const reconnectBtn = document.getElementById("reconnect-btn");
 
   let currentGexProText = "";
+  let isEditingUrl = false;
+
+  backendUrlInput.addEventListener("focus", () => { isEditingUrl = true; });
+  backendUrlInput.addEventListener("blur", () => { isEditingUrl = false; });
 
   function updateUI() {
     chrome.runtime.sendMessage({ action: "GET_STATUS" }, (response) => {
@@ -21,6 +27,10 @@ document.addEventListener("DOMContentLoaded", () => {
       } else {
         connStatus.textContent = "Disconnected";
         connStatus.className = "status-badge disconnected";
+      }
+
+      if (!isEditingUrl && response.backendUrl) {
+        backendUrlInput.value = response.backendUrl;
       }
 
       activeSymbol.textContent = response.currentSymbol || "SPY";
@@ -35,6 +45,17 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  saveUrlBtn.addEventListener("click", () => {
+    const newUrl = backendUrlInput.value.trim();
+    if (!newUrl) return;
+
+    saveUrlBtn.textContent = "Saved";
+    chrome.runtime.sendMessage({ action: "UPDATE_BACKEND_URL", url: newUrl }, () => {
+      setTimeout(() => { saveUrlBtn.textContent = "Set"; }, 1500);
+      updateUI();
+    });
+  });
 
   copyBtn.addEventListener("click", () => {
     if (pineString.value) {
@@ -58,12 +79,12 @@ document.addEventListener("DOMContentLoaded", () => {
     reconnectBtn.textContent = "Reconnecting...";
     chrome.runtime.sendMessage({ action: "RECONNECT_WS" }, () => {
       setTimeout(() => {
-        reconnectBtn.textContent = "Reconnect Backend";
+        reconnectBtn.textContent = "Force Reconnect";
         updateUI();
       }, 1000);
     });
   });
 
   updateUI();
-  setInterval(updateUI, 2000);
+  setInterval(updateUI, 2500);
 });

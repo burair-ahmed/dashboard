@@ -1,16 +1,20 @@
 {
   "manifest_version": 3,
   "name": "TradingView GEX Automation Engine",
-  "version": "1.0.0",
-  "description": "Zero-interruption real-time GEX levels and walls on TradingView charts.",
+  "version": "1.1.0",
+  "description": "Zero-interruption real-time GEX levels and walls on TradingView charts (Local & Cloud Hugging Face).",
   "permissions": [
     "storage",
     "activeTab"
   ],
   "host_permissions": [
     "*://*.tradingview.com/*",
-    "http://127.0.0.1:8765/*",
-    "ws://127.0.0.1:8765/*"
+    "http://127.0.0.1:*/*",
+    "ws://127.0.0.1:*/*",
+    "http://localhost:*/*",
+    "ws://localhost:*/*",
+    "https://*.hf.space/*",
+    "wss://*.hf.space/*"
   ],
   "background": {
     "service_worker": "scripts/background.js"
@@ -44,4 +48,3 @@
     "default_title": "GEX Level Controller"
   }
 }
-

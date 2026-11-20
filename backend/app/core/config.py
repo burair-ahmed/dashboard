@@ -11,8 +11,10 @@ class Settings(BaseSettings):
     MANUAL_ES_BASIS: float = float(os.getenv("MANUAL_ES_BASIS", "15.0"))
     MANUAL_NQ_BASIS: float = float(os.getenv("MANUAL_NQ_BASIS", "45.0"))
     
-    HOST: str = os.getenv("HOST", "127.0.0.1")
-    PORT: int = int(os.getenv("PORT", "8765"))
+    # Listen on 0.0.0.0 so Docker / Hugging Face Spaces can route traffic
+    HOST: str = os.getenv("HOST", "0.0.0.0")
+    # Hugging Face Spaces default port is 7860
+    PORT: int = int(os.getenv("PORT", "7860"))
     
     USE_MOCK_DATA: bool = os.getenv("USE_MOCK_DATA", "false").lower() in ("true", "1", "yes")
 

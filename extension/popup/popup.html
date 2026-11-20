@@ -12,6 +12,15 @@
       <div id="conn-status" class="status-badge connecting">Connecting</div>
     </div>
 
+    <!-- Backend Host Selector (Local vs Hugging Face) -->
+    <div class="backend-settings">
+      <label for="backend-url">Backend Server:</label>
+      <div class="input-row">
+        <input type="text" id="backend-url" placeholder="http://127.0.0.1:7860">
+        <button id="save-url-btn">Set</button>
+      </div>
+    </div>
+
     <div class="symbol-box">
       <span class="lbl">Active Instrument</span>
       <span id="active-symbol" class="val">--</span>
@@ -33,7 +42,7 @@
     </div>
 
     <div class="copy-section">
-      <label for="gex-pro-btn">GEX Levels Pro Indicator:</label>
+      <label for="copy-pro-btn">GEX Levels Pro Indicator:</label>
       <button id="copy-pro-btn" class="full-btn">Copy Full GEX Pro Plan 📋</button>
     </div>
 
@@ -46,7 +55,7 @@
     </div>
 
     <div class="actions">
-      <button id="reconnect-btn">Reconnect Backend</button>
+      <button id="reconnect-btn">Force Reconnect</button>
     </div>
   </div>
   <script src="popup.js"></script>
