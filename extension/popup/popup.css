@@ -61,6 +61,49 @@ body {
   margin-bottom: 5px;
 }
 
+.preset-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.preset-btn {
+  flex: 1;
+  padding: 6px 8px;
+  border: 1px solid #2A2E39;
+  border-radius: 4px;
+  background: #131722;
+  color: #787B86;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.preset-btn:hover {
+  border-color: #2962FF;
+  color: #D1D4DC;
+}
+
+.preset-btn.active {
+  border-color: #2962FF;
+  background: rgba(41, 98, 255, 0.15);
+  color: #2962FF;
+}
+
+.preset-btn.cloud-btn.active {
+  border-color: #00E676;
+  background: rgba(0, 230, 118, 0.1);
+  color: #00E676;
+}
+
+.conn-mode {
+  margin-top: 5px;
+  font-size: 10px;
+  color: #787B86;
+  text-align: right;
+}
+
 .input-row {
   display: flex;
   gap: 6px;

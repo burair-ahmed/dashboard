@@ -15,10 +15,15 @@
     <!-- Backend Host Selector (Local vs Hugging Face) -->
     <div class="backend-settings">
       <label for="backend-url">Backend Server:</label>
+      <div class="preset-row">
+        <button class="preset-btn cloud-btn" id="preset-cloud" title="Use Hugging Face cloud backend">☁️ Cloud</button>
+        <button class="preset-btn local-btn" id="preset-local" title="Use local backend (localhost:7860)">🖥️ Local</button>
+      </div>
       <div class="input-row">
-        <input type="text" id="backend-url" placeholder="http://127.0.0.1:7860">
+        <input type="text" id="backend-url" placeholder="https://burair-ahmed-gex-backend.hf.space">
         <button id="save-url-btn">Set</button>
       </div>
+      <div class="conn-mode" id="conn-mode">Mode: --</div>
     </div>
 
     <div class="symbol-box">
