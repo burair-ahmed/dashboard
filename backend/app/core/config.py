@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     ITMATRIX_API_KEY: str = os.getenv("ITMATRIX_API_KEY", "itm_7a90c90c58321417180d5421e9a87c2c")
     ITMATRIX_BASE_URL: str = os.getenv("ITMATRIX_BASE_URL", "https://api.itmatrixhq.com")
-    POLL_INTERVAL_SECONDS: int = int(os.getenv("POLL_INTERVAL_SECONDS", "60"))
+    POLL_INTERVAL_SECONDS: int = int(os.getenv("POLL_INTERVAL_SECONDS", "15"))
     
     CASH_FUTURES_BASIS_MODE: Literal["auto", "manual", "none"] = os.getenv("CASH_FUTURES_BASIS_MODE", "manual")  # type: ignore
     MANUAL_ES_BASIS: float = float(os.getenv("MANUAL_ES_BASIS", "15.0"))

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   createChart,
   ColorType,
@@ -9,6 +9,20 @@ import {
   type UTCTimestamp,
 } from 'lightweight-charts';
 import type { Candle, GEXLevels, OverlayVisibility } from '../types/gex';
+
+function formatUnixTime(unixSec: number, isDaily: boolean): string {
+  const d = new Date(unixSec * 1000);
+  if (isDaily) {
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+  return d.toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+}
 
 interface CandlestickChartProps {
   candles: Candle[];
@@ -34,6 +48,10 @@ export function CandlestickChart({
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
   const priceLinesRef = useRef<IPriceLine[]>([]);
+  const lastBarTimeRef = useRef<number>(0);
+  const candlesByTimeRef = useRef<Map<number, Candle>>(new Map());
+  const [hoveredCandle, setHoveredCandle] = useState<Candle | null>(null);
+  const isDaily = timeframe === 'D' || timeframe === 'W' || timeframe === 'M';
 
   // Initialize chart once
   useEffect(() => {
@@ -41,6 +59,8 @@ export function CandlestickChart({
     if (!el) return;
 
     const chart = createChart(el, {
+      width: el.clientWidth || 600,
+      height: el.clientHeight || 400,
       layout: {
         background: { type: ColorType.Solid, color: '#0b0f17' },
         textColor: '#94a3b8',
@@ -53,10 +73,14 @@ export function CandlestickChart({
         vertLine: { color: '#475569', labelBackgroundColor: '#1e293b' },
         horzLine: { color: '#475569', labelBackgroundColor: '#1e293b' },
       },
+      localization: {
+        timeFormatter: (time: number) => formatUnixTime(time, timeframe === 'D'),
+      },
       rightPriceScale: {
         borderColor: '#243047',
       },
       timeScale: {
+        visible: true,
         borderColor: '#243047',
         timeVisible: true,
         secondsVisible: false,
@@ -84,6 +108,15 @@ export function CandlestickChart({
     candleSeriesRef.current = candleSeries;
     volumeSeriesRef.current = volumeSeries;
 
+    chart.subscribeCrosshairMove((param) => {
+      if (!param.time || typeof param.time !== 'number') {
+        setHoveredCandle(null);
+        return;
+      }
+      const match = candlesByTimeRef.current.get(param.time);
+      setHoveredCandle(match ?? null);
+    });
+
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
@@ -102,7 +135,7 @@ export function CandlestickChart({
     };
   }, []);
 
-  // Load historical candles
+  // Load historical candles (deduplicated & sorted ascending by time)
   useEffect(() => {
     const candleSeries = candleSeriesRef.current;
     const volumeSeries = volumeSeriesRef.current;
@@ -111,10 +144,21 @@ export function CandlestickChart({
     if (candles.length === 0) {
       candleSeries.setData([]);
       volumeSeries.setData([]);
+      candlesByTimeRef.current.clear();
+      lastBarTimeRef.current = 0;
       return;
     }
 
-    const sorted = [...candles].sort((a, b) => a.time - b.time);
+    const dedup = new Map<number, Candle>();
+    for (const c of candles) {
+      if (Number.isFinite(c.time)) {
+        dedup.set(c.time, c);
+      }
+    }
+    const sorted = Array.from(dedup.values()).sort((a, b) => a.time - b.time);
+    candlesByTimeRef.current = dedup;
+    lastBarTimeRef.current = sorted.length > 0 ? sorted[sorted.length - 1].time : 0;
+
     candleSeries.setData(
       sorted.map((c) => ({
         time: c.time as UTCTimestamp,
@@ -136,11 +180,15 @@ export function CandlestickChart({
     chartRef.current?.timeScale().fitContent();
   }, [candles]);
 
-  // Stream live candle updates
+  // Stream live candle updates safely
   useEffect(() => {
     const candleSeries = candleSeriesRef.current;
     const volumeSeries = volumeSeriesRef.current;
     if (!candleSeries || !volumeSeries || !latestCandle) return;
+    if (latestCandle.time < lastBarTimeRef.current) return;
+
+    lastBarTimeRef.current = latestCandle.time;
+    candlesByTimeRef.current.set(latestCandle.time, latestCandle);
 
     candleSeries.update({
       time: latestCandle.time as UTCTimestamp,
@@ -216,17 +264,19 @@ export function CandlestickChart({
     }
   }, [levels, visibility]);
 
+  const activeBar = hoveredCandle ?? latestCandle;
+
   return (
     <section className="panel chart-panel">
       <div className="panel-header">
         <span>
           {tvSymbol} · {timeframe === 'D' ? '1D' : `${timeframe}m`}
         </span>
-        <span className="panel-sub">
+        <span className="panel-sub" style={{ fontVariantNumeric: 'tabular-nums' }}>
           {loading
             ? 'Loading TradingView candles...'
-            : latestCandle
-              ? `Last: ${latestCandle.close.toFixed(2)}`
+            : activeBar
+              ? `${formatUnixTime(activeBar.time, isDaily)}  |  O ${activeBar.open.toFixed(2)}  H ${activeBar.high.toFixed(2)}  L ${activeBar.low.toFixed(2)}  C ${activeBar.close.toFixed(2)}`
               : 'No bars'}
         </span>
       </div>
