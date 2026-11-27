@@ -32,10 +32,13 @@ export function useGexLevels(symbol: string): UseGexLevelsResult {
         const data: GEXLevels = await res.json();
         if (!cancelled) {
           setLevels(data);
+          setError(null);
+          setStatus('connected');
         }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to fetch GEX levels');
+          setStatus('error');
         }
       } finally {
         if (!cancelled) {
@@ -73,11 +76,11 @@ export function useGexLevels(symbol: string): UseGexLevelsResult {
     };
 
     ws.onerror = () => {
-      if (!cancelled) setStatus('disconnected');
+      // Keep REST polling active; status is driven by REST success/failure
     };
 
     ws.onclose = () => {
-      if (!cancelled) setStatus('disconnected');
+      // Keep REST polling active; status is driven by REST success/failure
     };
 
     // REST polling fallback when WebSocket is unavailable (e.g., serverless deployments)

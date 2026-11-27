@@ -40,9 +40,12 @@ export function useMarketData(symbol: string, timeframe: string): UseMarketDataR
         setCandles(bars);
         setLatestCandle(bars.length > 0 ? bars[bars.length - 1] : null);
         setTvSymbol(body.tvSymbol || symbol);
+        setError(null);
+        setStatus((prev) => (prev === 'connected' ? prev : 'connected'));
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to load TradingView candles');
+          setStatus('error');
         }
       } finally {
         if (!cancelled) {
@@ -82,11 +85,11 @@ export function useMarketData(symbol: string, timeframe: string): UseMarketDataR
     };
 
     ws.onerror = () => {
-      if (!cancelled) setStatus('disconnected');
+      // Keep REST polling active; status is driven by REST success/failure
     };
 
     ws.onclose = () => {
-      if (!cancelled) setStatus('disconnected');
+      // Keep REST polling active; status is driven by REST success/failure
     };
 
     // REST polling fallback when WebSocket is unavailable (e.g., serverless deployments)
