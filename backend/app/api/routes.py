@@ -85,15 +85,20 @@ async def get_levels_for_symbol(tv_symbol: str):
 
     # Convert levels if target symbol is futures or has a basis difference
     if underlying != tv_symbol.upper():
+        levels.underlying_price = BasisConverter.convert_level_to_target(levels.underlying_price, underlying, tv_symbol)
         levels.call_wall = BasisConverter.convert_level_to_target(levels.call_wall, underlying, tv_symbol)
         levels.put_wall = BasisConverter.convert_level_to_target(levels.put_wall, underlying, tv_symbol)
         levels.gamma_flip = BasisConverter.convert_level_to_target(levels.gamma_flip, underlying, tv_symbol)
+        levels.bull_trigger = BasisConverter.convert_level_to_target(levels.bull_trigger, underlying, tv_symbol)
+        levels.bear_trigger = BasisConverter.convert_level_to_target(levels.bear_trigger, underlying, tv_symbol)
         levels.top_positive_strikes = [
             BasisConverter.convert_level_to_target(s, underlying, tv_symbol) for s in levels.top_positive_strikes
         ]
         levels.top_negative_strikes = [
             BasisConverter.convert_level_to_target(s, underlying, tv_symbol) for s in levels.top_negative_strikes
         ]
+        for s in levels.strikes:
+            s.strike = BasisConverter.convert_level_to_target(s.strike, underlying, tv_symbol)
         levels.compact_string = (
             f"CW:{levels.call_wall:.2f}|PW:{levels.put_wall:.2f}|GF:{levels.gamma_flip:.2f}|"
             f"R:{'POS' if levels.total_net_gex >= 0 else 'NEG'}"

@@ -17,8 +17,11 @@ class GEXLevels(BaseModel):
     call_wall: float
     put_wall: float
     gamma_flip: float
+    bull_trigger: float
+    bear_trigger: float
     top_positive_strikes: List[float] = Field(default_factory=list)
     top_negative_strikes: List[float] = Field(default_factory=list)
+    strikes: List[StrikeGEX] = Field(default_factory=list)
     total_net_gex: float
     regime: str  # "POSITIVE_GAMMA" (low volatility / mean reverting) or "NEGATIVE_GAMMA" (high volatility / momentum)
     compact_string: str  # Optimized string for Pine Script copy-paste fallback
@@ -101,13 +104,20 @@ class GEXProcessor:
         total_net_gex = float(raw_net) if raw_net is not None else sum(s.gex for s in parsed_strikes)
         regime = "POSITIVE_GAMMA" if total_net_gex >= 0 else "NEGATIVE_GAMMA"
 
-        # 4. Build Compact Pine Script String
+        # 4. Bull & Bear Triggers
+        sorted_by_price = sorted(parsed_strikes, key=lambda s: s.strike)
+        above_spot = [s for s in sorted_by_price if s.strike > underlying_price]
+        below_spot = [s for s in sorted_by_price if s.strike < underlying_price]
+        bull_trig = min(above_spot, key=lambda s: s.strike).strike if above_spot else round(underlying_price + 1.0, 2)
+        bear_trig = max(below_spot, key=lambda s: s.strike).strike if below_spot else round(underlying_price - 1.0, 2)
+
+        # 5. Build Compact Pine Script String
         compact_str = (
             f"CW:{call_wall:.2f}|PW:{put_wall:.2f}|GF:{gamma_flip:.2f}|"
             f"R:{'POS' if total_net_gex >= 0 else 'NEG'}"
         )
 
-        # 5. Build GEX Levels Pro Multi-line Text
+        # 6. Build GEX Levels Pro Multi-line Text
         gex_pro_text = cls._generate_gex_pro_plan(
             spot=underlying_price,
             call_wall=call_wall,
@@ -125,8 +135,11 @@ class GEXProcessor:
             call_wall=call_wall,
             put_wall=put_wall,
             gamma_flip=gamma_flip,
+            bull_trigger=bull_trig,
+            bear_trigger=bear_trig,
             top_positive_strikes=top_pos,
             top_negative_strikes=top_neg,
+            strikes=sorted_by_price,
             total_net_gex=round(total_net_gex, 2),
             regime=regime,
             compact_string=compact_str,
