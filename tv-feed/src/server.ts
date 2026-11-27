@@ -27,6 +27,7 @@ app.get('/api/tv/candles', async (req, res) => {
 
   try {
     const data = await fetchHistoricalCandles(symbol, timeframe, count);
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
     res.json({
       symbol: symbol.toUpperCase(),
       ...data,

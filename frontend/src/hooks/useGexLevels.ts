@@ -25,7 +25,7 @@ export function useGexLevels(symbol: string): UseGexLevelsResult {
 
     async function fetchLevels() {
       try {
-        const res = await fetch(`/api/levels/${encodeURIComponent(symbol)}`);
+        const res = await fetch(`/api/levels/${encodeURIComponent(symbol)}`, { cache: 'no-store' });
         if (!res.ok) {
           throw new Error(`GEX API HTTP ${res.status}`);
         }
@@ -88,7 +88,7 @@ export function useGexLevels(symbol: string): UseGexLevelsResult {
       if (!cancelled && ws.readyState !== WebSocket.OPEN) {
         void fetchLevels();
       }
-    }, 30000);
+    }, 10000);
 
     return () => {
       cancelled = true;

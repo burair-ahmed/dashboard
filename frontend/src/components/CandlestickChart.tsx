@@ -24,6 +24,27 @@ function formatUnixTime(unixSec: number, isDaily: boolean): string {
   });
 }
 
+function getTimeframeSeconds(timeframe: string): number {
+  if (timeframe === 'D') return 86400;
+  if (timeframe === 'W') return 604800;
+  if (timeframe === 'M') return 2592000;
+  const mins = Number(timeframe);
+  return Number.isFinite(mins) && mins > 0 ? mins * 60 : 300;
+}
+
+function formatCountdown(remainingSec: number): string {
+  if (remainingSec <= 0) return '00:00';
+  const hrs = Math.floor(remainingSec / 3600);
+  const mins = Math.floor((remainingSec % 3600) / 60);
+  const secs = remainingSec % 60;
+  const mm = String(mins).padStart(2, '0');
+  const ss = String(secs).padStart(2, '0');
+  if (hrs > 0) {
+    return `${String(hrs).padStart(2, '0')}:${mm}:${ss}`;
+  }
+  return `${mm}:${ss}`;
+}
+
 interface CandlestickChartProps {
   candles: Candle[];
   latestCandle: Candle | null;
@@ -50,8 +71,38 @@ export function CandlestickChart({
   const priceLinesRef = useRef<IPriceLine[]>([]);
   const lastBarTimeRef = useRef<number>(0);
   const candlesByTimeRef = useRef<Map<number, Candle>>(new Map());
+  const hasFittedRef = useRef<boolean>(false);
   const [hoveredCandle, setHoveredCandle] = useState<Candle | null>(null);
+  const [countdown, setCountdown] = useState<string>('--:--');
   const isDaily = timeframe === 'D' || timeframe === 'W' || timeframe === 'M';
+
+  // Reset initial-fit flag when switching symbol or timeframe
+  useEffect(() => {
+    hasFittedRef.current = false;
+  }, [tvSymbol, timeframe]);
+
+  // 1-second candle close countdown timer
+  useEffect(() => {
+    const updateTimer = () => {
+      if (!latestCandle) {
+        setCountdown('--:--');
+        return;
+      }
+      const durationSec = getTimeframeSeconds(timeframe);
+      const closeAt = latestCandle.time + durationSec;
+      const nowSec = Math.floor(Date.now() / 1000);
+      const remaining = closeAt - nowSec;
+      if (remaining <= 0) {
+        setCountdown('Closing...');
+      } else {
+        setCountdown(formatCountdown(remaining));
+      }
+    };
+
+    updateTimer();
+    const timerId = window.setInterval(updateTimer, 1000);
+    return () => window.clearInterval(timerId);
+  }, [latestCandle, timeframe]);
 
   // Initialize chart once
   useEffect(() => {
@@ -177,7 +228,10 @@ export function CandlestickChart({
       }))
     );
 
-    chartRef.current?.timeScale().fitContent();
+    if (!hasFittedRef.current) {
+      chartRef.current?.timeScale().fitContent();
+      hasFittedRef.current = true;
+    }
   }, [candles]);
 
   // Stream live candle updates safely
@@ -269,8 +323,25 @@ export function CandlestickChart({
   return (
     <section className="panel chart-panel">
       <div className="panel-header">
-        <span>
-          {tvSymbol} · {timeframe === 'D' ? '1D' : `${timeframe}m`}
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '10px' }}>
+          <span>
+            {tvSymbol} · {timeframe === 'D' ? '1D' : `${timeframe}m`}
+          </span>
+          <span
+            style={{
+              background: 'rgba(59, 130, 246, 0.16)',
+              border: '1px solid rgba(59, 130, 246, 0.4)',
+              color: '#93c5fd',
+              padding: '2px 8px',
+              borderRadius: '5px',
+              fontSize: '11px',
+              fontWeight: 700,
+              fontVariantNumeric: 'tabular-nums',
+            }}
+            title="Time remaining until current candle closes"
+          >
+            Close in {countdown}
+          </span>
         </span>
         <span className="panel-sub" style={{ fontVariantNumeric: 'tabular-nums' }}>
           {loading

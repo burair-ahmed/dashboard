@@ -35,6 +35,7 @@ export async function fetchHistoricalCandles(
     symbol: tvSymbol,
     timeframe: tf,
     count: safeCount,
+    session: 'extended',
     credentials: getCredentials(),
   });
 
@@ -65,6 +66,7 @@ export async function subscribeToCandles(
         symbol: tvSymbol,
         timeframe: tf,
         count: 20,
+        session: 'extended',
         credentials: getCredentials(),
       },
       {

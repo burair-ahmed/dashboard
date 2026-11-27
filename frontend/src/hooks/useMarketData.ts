@@ -29,7 +29,8 @@ export function useMarketData(symbol: string, timeframe: string): UseMarketDataR
     async function loadHistory() {
       try {
         const res = await fetch(
-          `/api/tv/candles?symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}&count=300`
+          `/api/tv/candles?symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}&count=300`,
+          { cache: 'no-store' }
         );
         const body = await res.json();
         if (!res.ok) {
@@ -97,7 +98,7 @@ export function useMarketData(symbol: string, timeframe: string): UseMarketDataR
       if (!cancelled && ws.readyState !== WebSocket.OPEN) {
         void loadHistory();
       }
-    }, 15000);
+    }, 3000);
 
     return () => {
       cancelled = true;

@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 from fastapi.responses import PlainTextResponse
 from app.services.itmatrix_client import ITMatrixClient
 from app.services.symbol_map import SymbolMapper
@@ -68,11 +68,13 @@ async def list_supported_symbols():
     }
 
 @router.get("/api/levels/{tv_symbol}", response_model=GEXLevels)
-async def get_levels_for_symbol(tv_symbol: str):
+async def get_levels_for_symbol(tv_symbol: str, response: Response = None):
     """
     Computes GEX levels adjusted for the requested TradingView ticker symbol.
     Includes both native levels and complete GEX Levels Pro formatted plan.
     """
+    if response is not None:
+        response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
     underlying = SymbolMapper.resolve_underlying(tv_symbol)
     raw_data = await itmatrix_client.get_raw_gex(underlying)
     
