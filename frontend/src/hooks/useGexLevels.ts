@@ -73,15 +73,23 @@ export function useGexLevels(symbol: string): UseGexLevelsResult {
     };
 
     ws.onerror = () => {
-      if (!cancelled) setStatus('error');
+      if (!cancelled) setStatus('disconnected');
     };
 
     ws.onclose = () => {
       if (!cancelled) setStatus('disconnected');
     };
 
+    // REST polling fallback when WebSocket is unavailable (e.g., serverless deployments)
+    const pollInterval = window.setInterval(() => {
+      if (!cancelled && ws.readyState !== WebSocket.OPEN) {
+        void fetchLevels();
+      }
+    }, 30000);
+
     return () => {
       cancelled = true;
+      window.clearInterval(pollInterval);
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ action: 'unsubscribe', symbol }));
       }

@@ -53,6 +53,7 @@ def _convert_gex_pro_text(text: str, source_sym: str, target_sym: str) -> str:
     return "\n".join(converted_lines)
 
 @router.get("/health")
+@router.get("/api/health")
 async def health_check():
     return {
         "status": "healthy",

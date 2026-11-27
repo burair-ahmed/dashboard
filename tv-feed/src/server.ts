@@ -12,7 +12,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get('/health', (_req, res) => {
+app.get(['/health', '/api/tv/health'], (_req, res) => {
   res.json({
     status: 'healthy',
     service: 'TradingView Market Data Feed',
@@ -126,7 +126,11 @@ wss.on('connection', (ws: WebSocket) => {
   ws.on('error', cleanup);
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`[tv-feed] Listening on http://0.0.0.0:${PORT}`);
-});
+if (!process.env.VERCEL) {
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`[tv-feed] Listening on http://0.0.0.0:${PORT}`);
+  });
+}
+
+export default app;
 

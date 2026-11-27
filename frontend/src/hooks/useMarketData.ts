@@ -82,15 +82,23 @@ export function useMarketData(symbol: string, timeframe: string): UseMarketDataR
     };
 
     ws.onerror = () => {
-      if (!cancelled) setStatus('error');
+      if (!cancelled) setStatus('disconnected');
     };
 
     ws.onclose = () => {
       if (!cancelled) setStatus('disconnected');
     };
 
+    // REST polling fallback when WebSocket is unavailable (e.g., serverless deployments)
+    const pollInterval = window.setInterval(() => {
+      if (!cancelled && ws.readyState !== WebSocket.OPEN) {
+        void loadHistory();
+      }
+    }, 15000);
+
     return () => {
       cancelled = true;
+      window.clearInterval(pollInterval);
       if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ action: 'unsubscribe', symbol, timeframe }));
       }
